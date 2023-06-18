@@ -5,6 +5,7 @@
 #include <fstream>
 
 #define DELIM " ,:="
+#define OPERATIONS "yo"
 
 using namespace std;
 
@@ -23,6 +24,34 @@ class Regla {
           this->fc = fc;
       }
 
+      string getId() {
+        return this->id;
+      }
+
+      string getLhs() {
+        return this->lhs;
+      }
+
+      string getRhs() {
+        return this->rhs;
+      }
+
+      float getFc() {
+        return this->fc;
+      }
+
+      list<string> getAntecedentes() {
+        list<string> antecedentes;
+        char *a = new char[this->lhs.length()+1];
+        strcpy(a, this->lhs.c_str());
+        a = strtok(a, OPERATIONS);
+        while(a != NULL) {
+          antecedentes.push_back(a);
+          a = strtok(NULL, OPERATIONS);
+        }
+        return antecedentes;
+      }
+
       void imprimir() {
         cout << this->id << ": " << this->lhs << " -> " << this->rhs << " ,FC=" << this->fc << endl;
       }
@@ -39,14 +68,141 @@ class Hecho {
       this->fc = fc;
     }
 
+    string getHecho() {
+      return this->h;
+    }
+
+    float getFc() {
+      return this->fc;
+    }
+
+    void setFc(float fc) {
+      this->fc = fc;
+    }
+
     void imprimir() {
-        cout << this->h << " ,FC=" << this->fc << endl;
-      }
+      cout << this->h << " ,FC=" << this->fc << endl;
+    }
 };
 
-bool verificar(string Meta, list<Regla> BH) {
-  list<Regla>::iterator it;
+/* True si 'meta' está en BH. False en caso contrario. */
+bool contenida(string meta, list<Hecho> *BH) {
+  list<Hecho>::iterator it = BH->begin();
+  while(it != BH->end()) {
+    if (it->getHecho().compare(meta) == 0) {
+      return true;
+    }
+    it++;
+  }
   return false;
+}
+
+/* Devuelve la lista de Reglas cuyo Consecuente coincide con 'meta'. */
+list<Regla> equiparar(list<Regla> *BC, string meta) {
+  list<Regla> cc;
+  list<Regla>::iterator it = BC->begin();
+  while(it != BC->end()) {
+    if (it->getRhs().compare(meta) == 0) {
+      cc.push_back(*it);
+    }
+    it++;
+  }
+  return cc;
+}
+
+/* Selecciona la primera Regla de la lista 'cc' como siguiente regla a resolver y la elimina de 'cc'. */
+Regla resolver(list<Regla> *cc) {
+  Regla first = cc->front();
+  Regla r(first.getId(), first.getLhs(), first.getRhs(), first.getFc());
+  cc->pop_front();
+  return r;
+}
+
+/* Selecciona la primera cadena de 'metas' para usarla como próxima meta y la elimina de 'metas'. */
+string seleccionarMeta(list<string> *metas) {
+  string nMeta;
+  nMeta.insert(0, metas->front());
+  metas->pop_front();
+  return nMeta;
+}
+
+float factorCerteza(const char a, list<Hecho> *BH) {
+  list<Hecho>::iterator it = BH->begin();
+  float fc;
+  while(it != BH->end()) {
+    if(*((*it).getHecho().c_str()) == a) {
+      fc = (*it).getFc();
+      break;
+    }
+    it++;
+  }
+  return fc;
+}
+
+/* Combinación de antecedentes y encadenamiento de evidencia */
+float combinarFC(Regla r, list<Regla> *BC, list<Hecho> *BH) {
+  const char *a = r.getLhs().c_str();
+  float fc = factorCerteza(*a, BH);
+  for(int i = 1; i < r.getLhs().length(); i++) {
+    if (a[i] == 'o') {
+      i++;
+      fc = max(fc, factorCerteza(*(a+i), BH));
+    } else if (a[i] == 'y') {
+      i++;
+      fc = max(fc, factorCerteza(*(a+i), BH));
+    }
+  }
+  fc = fc*r.getFc();
+  return fc;
+}
+
+void nuevaEvidencia(string meta, float fc1, list<Hecho> *BH) {
+  list<Hecho>::iterator it = BH->begin();
+  while(it != BH->end()) {
+    if ((*it).getHecho().compare(meta) == 0) {
+      float fc2 = (*it).getFc();
+      if (fc1 >= 0 && fc2 >= 0) {
+        (*it).setFc(fc1 + fc2*(1+fc1));
+      } else if (fc1 <= 0 && fc2 <= 0) {
+        (*it).setFc(fc1 + fc2*(1-fc1));
+      } else {
+        (*it).setFc((fc1 + fc2)/(1 - min(abs(fc1), abs(fc2))));
+      }
+      return;
+    }
+    it++;
+  }
+  Hecho nuevoHecho(meta, fc1);
+  BH->push_back(nuevoHecho);
+}
+
+bool verificar(string meta, list<Regla> *BC, list<Hecho> *BH) {
+  bool verificado = false;
+  if (!contenida(meta, BH)) {
+    list<Regla> cc = equiparar(BC, meta);
+    while(!cc.empty() && !verificado) {
+      Regla r = resolver(&cc);
+      list<string> nuevasMetas = r.getAntecedentes();
+      verificado = true;
+      while(!nuevasMetas.empty() && verificado) {
+        string nuevaMeta = seleccionarMeta(&nuevasMetas);
+        verificado = verificar(nuevaMeta, BC, BH);
+      }
+      if (verificado) {
+        float fc = combinarFC(r, BC, BH); // Factor de certeza a partir de los antecedentes (Caso 1) y de la regla (Caso 3)
+        nuevaEvidencia(meta, fc, BH);   // Comprobar si ya estaba el antecedente y calcular factor de certeza (Caso 2)
+      }
+    return verificado;
+    }
+  }
+  return true;
+}
+
+int backwardChaining(string meta, list<Regla> *BC, list<Hecho> *BH) {
+  if (verificar(meta, BC, BH)) {
+    return 0;
+  }
+  return 1;
 }
 
 /* Imprime el uso del programa */
@@ -93,7 +249,7 @@ int leerBC(list<Regla> *BC, char *file) {
 }
 
 // Método para leer la BH
-int leerBH(list<Hecho> *BH, char *file, string *objetivo) {
+int leerBH(list<Hecho> *BH, char *file, string *goal) {
   // Abrimos el archivo
   ifstream BHfile(file);
   if(BHfile.fail()) {
@@ -109,13 +265,13 @@ int leerBH(list<Hecho> *BH, char *file, string *objetivo) {
     getline(BHfile, line);
     h = strtok(line.data(), DELIM);
     strtok(NULL, DELIM);              // FC=
-    fc = atof(strtok(NULL, DELIM));
+    fc = atof(strtok(NULL, DELIM));   // 'fc'
     Hecho hecho(h, fc);
     (*BH).push_back(hecho);
   }
-  getline(BHfile, line);
-  getline(BHfile, line);
-  *objetivo = line;
+  getline(BHfile, line);              // Objetivo
+  getline(BHfile, line);              // 'goal'
+  *goal = line;
   // Cerramos el archivo
   BHfile.close();
   if(BHfile.fail()) {
@@ -127,6 +283,7 @@ int leerBH(list<Hecho> *BH, char *file, string *objetivo) {
 /* Función principal del programa */
 int main(int argc, char *argv[])
 {
+  cout << "Iniciando...\n";
   if(argc != 3) {              // Comprobamos que haya 2 argumentos
       cerr << "Número de argumentos incorrecto." << endl;
       print_help();
@@ -141,18 +298,22 @@ int main(int argc, char *argv[])
 
   list<Regla> BC;   // Base de Conocimiento - Lista de Reglas
   list<Hecho> BH;   // Base de Hechos - Lista de Hechos
-  string objetivo;
+  string goal;
 
   if(leerBC(&BC, argv[1]) != 0) {
     cerr << "Hubo un error al leer la Base de Conocimiento del fichero: " << argv[1] << endl;
-    return -1;
+    return EXIT_FAILURE;
   }
-  if(leerBH(&BH, argv[2], &objetivo) != 0) {
+  if(leerBH(&BH, argv[2], &goal) != 0) {
     cerr << "Hubo un error al leer la Base de Hechos del fichero: " << argv[2] << endl;
-    return -1;
+    return EXIT_FAILURE;
   }
 
-  
+  if (backwardChaining(goal, &BC, &BH) != 0) {
+    return EXIT_FAILURE;
+  }
+  cout << "FIN" << endl;
+  return EXIT_SUCCESS;
 
   /*
   cout << "Base de Conocimiento: " << argv[1] << endl;
@@ -169,6 +330,4 @@ int main(int argc, char *argv[])
     itBH++;
   }
   */
-
-  return EXIT_SUCCESS;
 }

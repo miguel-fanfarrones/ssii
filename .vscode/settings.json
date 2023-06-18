@@ -1,0 +1,15 @@
+{
+    "files.associations": {
+        "iostream": "cpp",
+        "ostream": "cpp",
+        "array": "cpp",
+        "string": "cpp",
+        "string_view": "cpp",
+        "iosfwd": "cpp"
+    },
+    "cSpell.words": [
+        "nhechos",
+        "nreglas"
+    ],
+    "cmake.configureOnOpen": true
+}
