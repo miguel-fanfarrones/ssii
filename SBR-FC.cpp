@@ -126,6 +126,7 @@ string seleccionarMeta(list<string> *metas) {
   return nMeta;
 }
 
+/* Devuelve el factor de certeza del hecho 'a' de la Base de Hechos*/
 float factorCerteza(const char a, list<Hecho> *BH) {
   list<Hecho>::iterator it = BH->begin();
   float fc;
@@ -156,6 +157,7 @@ float combinarFC(Regla r, list<Regla> *BC, list<Hecho> *BH) {
   return fc;
 }
 
+/* Añade nueva evidencia a la Base de Hechos y resuelve los conflictos, si los hay. */
 void nuevaEvidencia(string meta, float fc1, list<Hecho> *BH) {
   list<Hecho>::iterator it = BH->begin();
   while(it != BH->end()) {
@@ -176,7 +178,7 @@ void nuevaEvidencia(string meta, float fc1, list<Hecho> *BH) {
   BH->push_back(nuevoHecho);
 }
 
-bool verificar(string meta, list<Regla> *BC, list<Hecho> *BH) {
+bool backwardChaining(string meta, list<Regla> *BC, list<Hecho> *BH) {
   bool verificado = false;
   if (!contenida(meta, BH)) {
     list<Regla> cc = equiparar(BC, meta);
@@ -186,7 +188,7 @@ bool verificar(string meta, list<Regla> *BC, list<Hecho> *BH) {
       verificado = true;
       while(!nuevasMetas.empty() && verificado) {
         string nuevaMeta = seleccionarMeta(&nuevasMetas);
-        verificado = verificar(nuevaMeta, BC, BH);
+        verificado = backwardChaining(nuevaMeta, BC, BH);
       }
       if (verificado) {
         float fc = combinarFC(r, BC, BH); // Factor de certeza a partir de los antecedentes (Caso 1) y de la regla (Caso 3)
@@ -196,13 +198,6 @@ bool verificar(string meta, list<Regla> *BC, list<Hecho> *BH) {
     }
   }
   return true;
-}
-
-int backwardChaining(string meta, list<Regla> *BC, list<Hecho> *BH) {
-  if (verificar(meta, BC, BH)) {
-    return 0;
-  }
-  return 1;
 }
 
 /* Imprime el uso del programa */
@@ -309,11 +304,10 @@ int main(int argc, char *argv[])
     return EXIT_FAILURE;
   }
 
-  if (backwardChaining(goal, &BC, &BH) != 0) {
-    return EXIT_FAILURE;
+  if (backwardChaining(goal, &BC, &BH)) {
+    return EXIT_SUCCESS;
   }
-  cout << "FIN" << endl;
-  return EXIT_SUCCESS;
+  return EXIT_FAILURE;
 
   /*
   cout << "Base de Conocimiento: " << argv[1] << endl;
