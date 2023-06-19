@@ -1,0 +1,41 @@
+SBR-FC con razonamiento hacia atrás.
+Base de Conocimiento: .\BC-2.txt
+Base de Hechos: .\BH-2.txt
+Objetivo: GanaEST
+
+CC = { R1 R4 R6 }
+R1 (regla activada)
+Eliminar R1 --> CC = { R4 R6 }
+NuevasMetas = { arbMod }
+    Meta = arbMod
+    NuevasMetas = { }
+    Verificar(arbMod, {localEST,visitanteRM,arbMod,publicoMayEST,publicoEqui,les2pivEST,les2pivRM}) --> true
+    BH = { localEST visitanteRM arbMod publicoMayEST publicoEqui les2pivEST les2pivRM }
+Caso 3: GanaEST, 0.4
+BH = { localEST visitanteRM arbMod publicoMayEST publicoEqui les2pivEST les2pivRM GanaEST }
+CC = { R4 R6 }
+R4 (regla activada)
+Eliminar R4 --> CC = { R6 }
+NuevasMetas = { publicoEqui }
+    Meta = publicoEqui
+    NuevasMetas = { }
+    Verificar(publicoEqui, {localEST,visitanteRM,arbMod,publicoMayEST,publicoEqui,les2pivEST,les2pivRM,GanaEST}) --> true
+    BH = { localEST visitanteRM arbMod publicoMayEST publicoEqui les2pivEST les2pivRM GanaEST }
+Caso 3: GanaEST, -0.1925
+Caso 2: GanaEST, 0.256966
+BH = { localEST visitanteRM arbMod publicoMayEST publicoEqui les2pivEST les2pivRM GanaEST }
+CC = { R6 }
+R6 (regla activada)
+Eliminar R6 --> CC = { }
+NuevasMetas = { les2pivEST }
+    Meta = les2pivEST
+    NuevasMetas = { }
+    Verificar(les2pivEST, {localEST,visitanteRM,arbMod,publicoMayEST,publicoEqui,les2pivEST,les2pivRM,GanaEST}) --> true
+    BH = { localEST visitanteRM arbMod publicoMayEST publicoEqui les2pivEST les2pivRM GanaEST }
+Caso 3: GanaEST, -0.6
+Caso 2: GanaEST, -0.461667
+BH = { localEST visitanteRM arbMod publicoMayEST publicoEqui les2pivEST les2pivRM GanaEST }
+CC = { }
+Return TRUE
+
+Objetivo = GanaEST, FC = -0.461667

@@ -1,0 +1,8 @@
+7
+R1: Si años23 Entonces exper, FC=0.5
+R2: Si añosMas3 Entonces exper, FC=0.9
+R3: Si horas23 Entonces cans, FC=0.5
+R4: Si horasMas3 Entonces cans, FC=1.0
+R5: Si exper y noSolo Entonces culpa, FC=-0.5
+R6: Si cans Entonces culpa, FC=0.5
+R7: Si joven y bebido Entonces culpa, FC=0.7

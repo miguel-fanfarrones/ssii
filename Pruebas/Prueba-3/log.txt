@@ -1,0 +1,89 @@
+SBR-FC con razonamiento hacia atrás.
+Base de Conocimiento: .\BC-3.txt
+Base de Hechos: .\BH-3.txt
+Objetivo: culpa
+
+CC = { R5 R6 R7 }
+R5 (regla activada)
+Eliminar R5 --> CC = { R6 R7 }
+NuevasMetas = { exper noSolo }
+    Meta = exper
+    NuevasMetas = { noSolo }
+    Verificar(exper, {joven,años23,horasMas3,noSolo,bebido})
+        CC = { R1 R2 }
+        R1 (regla activada)
+        Eliminar R1 --> CC = { R2 }
+        NuevasMetas = { años23 }
+            Meta = años23
+            NuevasMetas = { }
+            Verificar(años23, {joven,años23,horasMas3,noSolo,bebido}) --> true
+            BH = { joven años23 horasMas3 noSolo bebido }
+        Caso 3: exper, 0.5
+        BH = { joven años23 horasMas3 noSolo bebido exper }
+        CC = { R2 }
+        R2 (regla activada)
+        Eliminar R2 --> CC = { }
+        NuevasMetas = { añosMas3 }
+            Meta = añosMas3
+            NuevasMetas = { }
+            Verificar(añosMas3, {joven,años23,horasMas3,noSolo,bebido,exper})
+                CC = { }
+        Caso 3: exper, 0
+        Caso 2: exper, 0.5
+        BH = { joven años23 horasMas3 noSolo bebido exper }
+        CC = { }
+Caso 1: culpa, -1
+Caso 3: culpa, 0.5
+BH = { joven años23 horasMas3 noSolo bebido exper culpa }
+CC = { R6 R7 }
+R6 (regla activada)
+Eliminar R6 --> CC = { R7 }
+NuevasMetas = { cans }
+    Meta = cans
+    NuevasMetas = { }
+    Verificar(cans, {joven,años23,horasMas3,noSolo,bebido,exper,culpa})
+        CC = { R3 R4 }
+        R3 (regla activada)
+        Eliminar R3 --> CC = { R4 }
+        NuevasMetas = { horas23 }
+            Meta = horas23
+            NuevasMetas = { }
+            Verificar(horas23, {joven,años23,horasMas3,noSolo,bebido,exper,culpa})
+                CC = { }
+        Caso 3: cans, 0
+        BH = { joven años23 horasMas3 noSolo bebido exper culpa cans }
+        CC = { R4 }
+        R4 (regla activada)
+        Eliminar R4 --> CC = { }
+        NuevasMetas = { horasMas3 }
+            Meta = horasMas3
+            NuevasMetas = { }
+            Verificar(horasMas3, {joven,años23,horasMas3,noSolo,bebido,exper,culpa,cans}) --> true
+            BH = { joven años23 horasMas3 noSolo bebido exper culpa cans }
+        Caso 3: cans, 1
+        Caso 2: cans, 1
+        BH = { joven años23 horasMas3 noSolo bebido exper culpa cans }
+        CC = { }
+Caso 3: culpa, 0.5
+Caso 2: culpa, 0.75
+BH = { joven años23 horasMas3 noSolo bebido exper culpa cans }
+CC = { R7 }
+R7 (regla activada)
+Eliminar R7 --> CC = { }
+NuevasMetas = { joven bebido }
+    Meta = joven
+    NuevasMetas = { bebido }
+    Verificar(joven, {joven,años23,horasMas3,noSolo,bebido,exper,culpa,cans}) --> true
+    BH = { joven años23 horasMas3 noSolo bebido exper culpa cans }
+    Meta = bebido
+    NuevasMetas = { }
+    Verificar(bebido, {joven,años23,horasMas3,noSolo,bebido,exper,culpa,cans}) --> true
+    BH = { joven años23 horasMas3 noSolo bebido exper culpa cans }
+Caso 1: culpa, 0.4
+Caso 3: culpa, 0.28
+Caso 2: culpa, 0.82
+BH = { joven años23 horasMas3 noSolo bebido exper culpa cans }
+CC = { }
+Return TRUE
+
+Objetivo = culpa, FC = 0.82

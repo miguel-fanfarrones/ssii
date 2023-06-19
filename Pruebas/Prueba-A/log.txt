@@ -1,0 +1,95 @@
+SBR-FC con razonamiento hacia atrás.
+Base de Conocimiento: .\BC-A.txt
+Base de Hechos: .\BH-A.txt
+Objetivo: J
+
+CC = { R6 }
+R6 (regla activada)
+Eliminar R6 --> CC = { }
+NuevasMetas = { H I }
+    Meta = H
+    NuevasMetas = { I }
+    Verificar(H, {A,B,C,D,E})
+        CC = { R3 R4 }
+        R3 (regla activada)
+        Eliminar R3 --> CC = { R4 }
+        NuevasMetas = { F B }
+            Meta = F
+            NuevasMetas = { B }
+            Verificar(F, {A,B,C,D,E})
+                CC = { R1 }
+                R1 (regla activada)
+                Eliminar R1 --> CC = { }
+                NuevasMetas = { A }
+                    Meta = A
+                    NuevasMetas = { }
+                    Verificar(A, {A,B,C,D,E}) --> true
+                    BH = { A B C D E }
+                Caso 3: F, 0.2
+                BH = { A B C D E F }
+                CC = { }
+            Meta = B
+            NuevasMetas = { }
+            Verificar(B, {A,B,C,D,E,F}) --> true
+            BH = { A B C D E F }
+        Caso 1: H, -0.3
+        Caso 3: H, 0.15
+        BH = { A B C D E F H }
+        CC = { R4 }
+        R4 (regla activada)
+        Eliminar R4 --> CC = { }
+        NuevasMetas = { B G }
+            Meta = B
+            NuevasMetas = { G }
+            Verificar(B, {A,B,C,D,E,F,H}) --> true
+            BH = { A B C D E F H }
+            Meta = G
+            NuevasMetas = { }
+            Verificar(G, {A,B,C,D,E,F,H})
+                CC = { R2 }
+                R2 (regla activada)
+                Eliminar R2 --> CC = { }
+                NuevasMetas = { C D }
+                    Meta = C
+                    NuevasMetas = { D }
+                    Verificar(C, {A,B,C,D,E,F,H}) --> true
+                    BH = { A B C D E F H }
+                    Meta = D
+                    NuevasMetas = { }
+                    Verificar(D, {A,B,C,D,E,F,H}) --> true
+                    BH = { A B C D E F H }
+                Caso 1: G, -0.1
+                Caso 3: G, -0.02
+                BH = { A B C D E F H G }
+                CC = { }
+        Caso 1: H, -0.02
+        Caso 3: H, -0.016
+        Caso 2: H, 0.136179
+        BH = { A B C D E F H G }
+        CC = { }
+    Meta = I
+    NuevasMetas = { }
+    Verificar(I, {A,B,C,D,E,F,H,G})
+        CC = { R5 }
+        R5 (regla activada)
+        Eliminar R5 --> CC = { }
+        NuevasMetas = { G E }
+            Meta = G
+            NuevasMetas = { E }
+            Verificar(G, {A,B,C,D,E,F,H,G}) --> true
+            BH = { A B C D E F H G }
+            Meta = E
+            NuevasMetas = { }
+            Verificar(E, {A,B,C,D,E,F,H,G}) --> true
+            BH = { A B C D E F H G }
+        Caso 1: I, -0.02
+        Caso 3: I, -0.002
+        BH = { A B C D E F H G I }
+        CC = { }
+Caso 1: J, 0.136179
+Caso 3: J, 0.122561
+BH = { A B C D E F H G I J }
+CC = { }
+Return TRUE
+
+Objetivo = J, FC = 0.122561

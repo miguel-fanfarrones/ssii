@@ -1,0 +1,7 @@
+6
+R1: Si A Entonces F, FC=0.5
+R2: Si C y D Entonces G, FC=0.2
+R3: Si F y B Entonces H, FC=-0.5
+R4: Si B o G Entonces H, FC=0.8
+R5: Si G y E Entonces I, FC=0.1
+R6: Si H o I Entonces J, FC=0.9

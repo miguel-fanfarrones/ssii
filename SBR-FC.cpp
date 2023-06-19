@@ -1,23 +1,29 @@
 #include <stdlib.h>
+#include <cstdlib>
 #include <string.h>
 #include <list>
 #include <iostream>
 #include <fstream>
+#include <iomanip>
 
 #define DELIM " ,:="
 #define OPERATIONS "yo"
 
 using namespace std;
 
+ofstream logfile;
+int tab = -4;
+string goal;
+
 /* Clase "Regla" que representa una regla: 'id': Si 'lhs' Entonces 'rhs', FC='fc' */
 class Regla {
   private:
       string id;          // Identificador de la regla
-      string lhs;         // Antecedente
+      list<string> lhs;   // Antecedente
       string rhs;         // Consecuente
       float fc;           // Factor de certeza
   public:
-      Regla(string id, string lhs, string rhs, float fc) {    // Constructor
+      Regla(string id, list<string> lhs, string rhs, float fc) {    // Constructor
           this->id = id;
           this->lhs = lhs;
           this->rhs = rhs;
@@ -28,7 +34,7 @@ class Regla {
         return this->id;
       }
 
-      string getLhs() {
+      list<string> getLhs() {
         return this->lhs;
       }
 
@@ -42,18 +48,27 @@ class Regla {
 
       list<string> getAntecedentes() {
         list<string> antecedentes;
-        char *a = new char[this->lhs.length()+1];
-        strcpy(a, this->lhs.c_str());
-        a = strtok(a, OPERATIONS);
-        while(a != NULL) {
-          antecedentes.push_back(a);
-          a = strtok(NULL, OPERATIONS);
+        string a;
+        list<string>::iterator it = this->lhs.begin();
+        while(it != this->lhs.end()) {
+          if((*it).compare("o") != 0 && (*it).compare("y") != 0) {
+            a.insert(0, (*it).c_str());
+            antecedentes.push_back(a);
+            a.clear();
+          }
+          it++;
         }
         return antecedentes;
       }
 
       void imprimir() {
-        cout << this->id << ": " << this->lhs << " -> " << this->rhs << " ,FC=" << this->fc << endl;
+        cout << this->id << ":";
+        list<string>::iterator it = this->lhs.begin();
+        while(it != this->lhs.end()) {
+          cout << " " + *it;
+          it++;
+        }
+        cout << " -> " << this->rhs << " ,FC=" << this->fc << endl;
       }
 };
 
@@ -84,6 +99,59 @@ class Hecho {
       cout << this->h << " ,FC=" << this->fc << endl;
     }
 };
+
+/* Imprime el uso del programa */
+void print_help() {
+  cerr << "Uso: .\\SBR-FC BC-filename BH-filename" << endl;
+}
+
+void log_cc(list<Regla> *cc, bool indent) {
+  list<Regla>::iterator it = cc->begin();
+  if (indent) {
+    logfile << string(tab, ' ');
+  }
+   logfile << "CC = {";
+  while(it != cc->end()) {
+    logfile << " " + (*it).getId();
+    it++;
+  }
+  logfile << " }";
+}
+
+void log_nuevasMetas(list<string> *nm) {
+  list<string>::iterator it = nm->begin();
+  logfile << string(tab, ' ') + "NuevasMetas = {";
+  while(it != nm->end()) {
+    logfile << " " + *it;
+    it++;
+  }
+  logfile << " }" << endl;
+}
+
+void log_verificar(string meta, list<Hecho> *BH) {
+  logfile << string(tab, ' ') + "Verificar(" + meta + ", {";
+  list<Hecho>::iterator it = BH->begin();
+  logfile << (*it).getHecho();
+  it++;
+  while(it != BH->end()) {
+    logfile << "," + (*it).getHecho();
+    it++;
+  }
+  logfile << "})";
+}
+
+void log_BH(list<Hecho> *BH, bool indent) {
+  if(indent) {
+    logfile << string(tab, ' ');
+  }
+  list<Hecho>::iterator it = BH->begin();
+   logfile << "BH = {";
+  while(it != BH->end()) {
+    logfile << " " + (*it).getHecho();
+    it++;
+  }
+  logfile << " }" << endl;
+}
 
 /* True si 'meta' está en BH. False en caso contrario. */
 bool contenida(string meta, list<Hecho> *BH) {
@@ -127,33 +195,43 @@ string seleccionarMeta(list<string> *metas) {
 }
 
 /* Devuelve el factor de certeza del hecho 'a' de la Base de Hechos*/
-float factorCerteza(const char a, list<Hecho> *BH) {
+float factorCerteza(string a, list<Hecho> *BH) {
   list<Hecho>::iterator it = BH->begin();
   float fc;
   while(it != BH->end()) {
-    if(*((*it).getHecho().c_str()) == a) {
+    if((*it).getHecho().compare(a) == 0) {
       fc = (*it).getFc();
-      break;
+      return fc;
     }
     it++;
   }
-  return fc;
+  return 0.0;
 }
 
 /* Combinación de antecedentes y encadenamiento de evidencia */
-float combinarFC(Regla r, list<Regla> *BC, list<Hecho> *BH) {
-  const char *a = r.getLhs().c_str();
-  float fc = factorCerteza(*a, BH);
-  for(int i = 1; i < r.getLhs().length(); i++) {
-    if (a[i] == 'o') {
-      i++;
-      fc = max(fc, factorCerteza(*(a+i), BH));
-    } else if (a[i] == 'y') {
-      i++;
-      fc = max(fc, factorCerteza(*(a+i), BH));
+float combinarFC(Regla *r, list<Regla> *BC, list<Hecho> *BH) {
+  bool caso1 = false;
+  list<string> antecedentes = r->getLhs();
+  list<string>::iterator it = antecedentes.begin();
+  float fc = factorCerteza(*it, BH);
+  it++;
+  while(it != antecedentes.end()) {
+    if ((*it).compare("o") == 0) {
+      caso1 = true;
+      it++;
+      fc = max(fc, factorCerteza(*it, BH));
+    } else if ((*it).compare("y") == 0) {
+      caso1 = true;
+      it++;
+      fc = min(fc, factorCerteza(*it, BH));
     }
+    it++;
   }
-  fc = fc*r.getFc();
+  if (caso1) {
+    logfile << string(tab, ' ') + "Caso 1: " + r->getRhs() + ", " << fc << endl; 
+  }
+  fc = fc*r->getFc();
+  logfile << string(tab, ' ') + "Caso 3: " + r->getRhs() + ", " << fc << endl; 
   return fc;
 }
 
@@ -164,12 +242,13 @@ void nuevaEvidencia(string meta, float fc1, list<Hecho> *BH) {
     if ((*it).getHecho().compare(meta) == 0) {
       float fc2 = (*it).getFc();
       if (fc1 >= 0 && fc2 >= 0) {
-        (*it).setFc(fc1 + fc2*(1+fc1));
-      } else if (fc1 <= 0 && fc2 <= 0) {
         (*it).setFc(fc1 + fc2*(1-fc1));
+      } else if (fc1 <= 0 && fc2 <= 0) {
+        (*it).setFc(fc1 + fc2*(1+fc1));
       } else {
         (*it).setFc((fc1 + fc2)/(1 - min(abs(fc1), abs(fc2))));
       }
+      logfile << string(tab, ' ') + "Caso 2: " + meta + ", " << (*it).getFc() << endl;
       return;
     }
     it++;
@@ -181,28 +260,41 @@ void nuevaEvidencia(string meta, float fc1, list<Hecho> *BH) {
 bool backwardChaining(string meta, list<Regla> *BC, list<Hecho> *BH) {
   bool verificado = false;
   if (!contenida(meta, BH)) {
+    logfile << endl;
+    tab += 4;
     list<Regla> cc = equiparar(BC, meta);
-    while(!cc.empty() && !verificado) {
+    log_cc(&cc, true);
+    logfile << endl;
+    while(!cc.empty()) {
       Regla r = resolver(&cc);
+      logfile << string(tab, ' ') + r.getId() + " (regla activada)" << endl;
+      logfile << string(tab, ' ') + "Eliminar " + r.getId() + " --> ";
+      log_cc(&cc, false);
+      logfile << endl;
       list<string> nuevasMetas = r.getAntecedentes();
+      log_nuevasMetas(&nuevasMetas);
       verificado = true;
+      tab += 4;
       while(!nuevasMetas.empty() && verificado) {
         string nuevaMeta = seleccionarMeta(&nuevasMetas);
+        logfile << string(tab, ' ') + "Meta = " + nuevaMeta << endl;
+        log_nuevasMetas(&nuevasMetas);
+        log_verificar(nuevaMeta, BH);
         verificado = backwardChaining(nuevaMeta, BC, BH);
       }
-      if (verificado) {
-        float fc = combinarFC(r, BC, BH); // Factor de certeza a partir de los antecedentes (Caso 1) y de la regla (Caso 3)
-        nuevaEvidencia(meta, fc, BH);   // Comprobar si ya estaba el antecedente y calcular factor de certeza (Caso 2)
-      }
-    return verificado;
+      tab -= 4;
+      float fc = combinarFC(&r, BC, BH); // Factor de certeza a partir de los antecedentes (Caso 1) y de la regla (Caso 3)
+      nuevaEvidencia(meta, fc, BH);     // Comprobar si ya estaba el antecedente y calcular factor de certeza (Caso 2)
+      log_BH(BH, true);
+      log_cc(&cc, true);
+      logfile << endl;
     }
+    tab -= 4;
+    return verificado;
   }
+  logfile << " --> true" << endl;
+  log_BH(BH, true);
   return true;
-}
-
-/* Imprime el uso del programa */
-void print_help() {
-  cerr << "Uso: .\\SBR-FC BC-filename BH-filename" << endl;
 }
 
 // Método para leer la BC
@@ -214,7 +306,8 @@ int leerBC(list<Regla> *BC, char *file) {
   }
    // Leemos línea por línea y formateamos los datos
   int nreglas;
-  string line, id, lhs, rhs;
+  string line, id, rhs;
+  list<string> lhs;
   char *l;
   float fc;
   getline(BCfile, line);
@@ -224,9 +317,8 @@ int leerBC(list<Regla> *BC, char *file) {
     id = strtok(line.data(),  DELIM);       // Ri
     strtok(NULL, DELIM);                    // Si
     l = strtok(NULL, DELIM);
-    lhs = "";
     while(strcmp(l, "Entonces") != 0) {     // Leemos antecedentes hasta encontrar 'Entonces'
-      lhs = lhs + l;
+      lhs.push_back(l);
       l = strtok(NULL, DELIM);
     }
     rhs = strtok(NULL, DELIM);              // Consecuente
@@ -234,6 +326,7 @@ int leerBC(list<Regla> *BC, char *file) {
     fc = atof(strtok(NULL, DELIM));         // fc
     Regla r(id, lhs, rhs, fc);              // Creamos la regla 'r'
     (*BC).push_back(r);                     // Añadimos 'r' a la BC
+    lhs.clear();
   }
   // Cerramos el archivo
   BCfile.close();
@@ -278,22 +371,20 @@ int leerBH(list<Hecho> *BH, char *file, string *goal) {
 /* Función principal del programa */
 int main(int argc, char *argv[])
 {
-  cout << "Iniciando...\n";
   if(argc != 3) {              // Comprobamos que haya 2 argumentos
       cerr << "Número de argumentos incorrecto." << endl;
       print_help();
       return EXIT_FAILURE;
   }
 
-  ofstream log("log.txt");      // Archivo log.txt
-  if(log.fail()) {
+  logfile.open("log.txt");      // Archivo log.txt
+  if(logfile.fail()) {
     cerr << "Hubo un error al crear el archivo 'log.txt'" << endl;
     return EXIT_FAILURE;
   }
 
   list<Regla> BC;   // Base de Conocimiento - Lista de Reglas
   list<Hecho> BH;   // Base de Hechos - Lista de Hechos
-  string goal;
 
   if(leerBC(&BC, argv[1]) != 0) {
     cerr << "Hubo un error al leer la Base de Conocimiento del fichero: " << argv[1] << endl;
@@ -304,24 +395,17 @@ int main(int argc, char *argv[])
     return EXIT_FAILURE;
   }
 
+  logfile << "SBR-FC con razonamiento hacia atrás." << endl;
+  logfile << "Base de Conocimiento: " << argv[1] << endl;
+  logfile << "Base de Hechos: " << argv[2] << endl;
+  logfile << "Objetivo: " + goal << endl;
+
   if (backwardChaining(goal, &BC, &BH)) {
+    logfile << "Return TRUE" << endl << endl;
+    logfile << "Objetivo = " + goal + ", FC = " << factorCerteza(goal, &BH) << endl;
+    logfile.close();
     return EXIT_SUCCESS;
   }
   return EXIT_FAILURE;
 
-  /*
-  cout << "Base de Conocimiento: " << argv[1] << endl;
-  list<Regla>::iterator itBC = BC.begin();
-  while(itBC != BC.end()) {
-    (*itBC).imprimir();
-    itBC++;
-  }
-  cout << endl;
-  cout << "Base de Hechos: " << argv[2] << endl;
-  list<Hecho>::iterator itBH = BH.begin();
-  while(itBH != BH.end()) {
-    (*itBH).imprimir();
-    itBH++;
-  }
-  */
 }

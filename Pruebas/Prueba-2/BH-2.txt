@@ -1,0 +1,10 @@
+7
+localEST, FC=1.0
+visitanteRM, FC=1.0
+arbMod, FC=1.0
+publicoMayEST, FC=0.65
+publicoEqui, FC=0.35
+les2pivEST, FC=1.0
+les2pivRM, FC=1.0
+Objetivo
+GanaEST

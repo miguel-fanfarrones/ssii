@@ -1,0 +1,8 @@
+5
+joven, FC=0.4
+años23, FC=1.0
+horasMas3, FC=1.0
+noSolo, FC=-1.0
+bebido, FC=0.5
+Objetivo
+culpa

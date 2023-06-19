@@ -1,0 +1,7 @@
+6
+R1: Si arbMod Entonces GanaEST, FC=0.4
+R2: Si arbMod Entonces GanaRM, FC=0.75
+R3: Si publicoMayEST Entonces GanaRM, FC=-0.4
+R4: Si publicoEqui Entonces GanaEST, FC=-0.55
+R5: Si les2pivRM y visitanteRM Entonces GanaRM, FC=-0.1
+R6: Si les2pivEST Entonces GanaEST, FC=-0.6
